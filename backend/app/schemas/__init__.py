@@ -1,3 +1,73 @@
-from .health import HealthResponse
+from app.schemas.health import HealthResponse
+from app.schemas.student_profile import (
+    StudentProfileBase,
+    StudentProfileCreate,
+    StudentProfileUpdate,
+    StudentProfileRead,
+    AcademicScore,
+    BudgetConstraint,
+    ProjectExperience,
+)
+from app.schemas.opportunity import (
+    OpportunityBase,
+    OpportunityCreate,
+    OpportunityUpdate,
+    OpportunityRead,
+    FundingDetail,
+    FundingType,
+    VerificationStatus,
+)
+from app.schemas.evidence_source import (
+    EvidenceSourceBase,
+    EvidenceSourceCreate,
+    EvidenceSourceRead,
+    SourceVerificationStatus,
+)
+from app.schemas.eligibility_assessment import (
+    EligibilityAssessmentBase,
+    EligibilityAssessmentCreate,
+    EligibilityAssessmentRead,
+    EligibilityCriterion,
+    EligibilityStatus,
+    CriterionType,
+)
+from app.schemas.research_run import (
+    ResearchRunBase,
+    ResearchRunCreate,
+    ResearchRunUpdate,
+    ResearchRunRead,
+    ResearchRunStatus,
+)
 
-__all__ = ["HealthResponse"]
+__all__ = [
+    "HealthResponse",
+    "StudentProfileBase",
+    "StudentProfileCreate",
+    "StudentProfileUpdate",
+    "StudentProfileRead",
+    "AcademicScore",
+    "BudgetConstraint",
+    "ProjectExperience",
+    "OpportunityBase",
+    "OpportunityCreate",
+    "OpportunityUpdate",
+    "OpportunityRead",
+    "FundingDetail",
+    "FundingType",
+    "VerificationStatus",
+    "EvidenceSourceBase",
+    "EvidenceSourceCreate",
+    "EvidenceSourceRead",
+    "SourceVerificationStatus",
+    "EligibilityAssessmentBase",
+    "EligibilityAssessmentCreate",
+    "EligibilityAssessmentRead",
+    "EligibilityCriterion",
+    "EligibilityStatus",
+    "CriterionType",
+    "ResearchRunBase",
+    "ResearchRunCreate",
+    "ResearchRunUpdate",
+    "ResearchRunRead",
+    "ResearchRunStatus",
+]

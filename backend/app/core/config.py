@@ -21,8 +21,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
     ]
     
-    # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./scholarswarm.db"
+    # Database (configurable via DATABASE_URL, local SQLite default)
+    DATABASE_URL: str = "sqlite:///./scholarswarm.db"
     
     model_config = SettingsConfigDict(
         env_file=".env",
