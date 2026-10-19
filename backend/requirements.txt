@@ -1,0 +1,9 @@
+# ScholarSwarm AI — Backend Dependencies (Milestone 1 Baseline)
+fastapi==0.149.0
+uvicorn==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
+sqlalchemy==2.1.5
+aiosqlite==0.22.1
+httpx==0.28.1
+pytest==9.1.1
