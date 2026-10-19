@@ -38,6 +38,13 @@ from app.schemas.research_run import (
     ResearchRunRead,
     ResearchRunStatus,
 )
+from app.schemas.ingestion import (
+    DocumentType,
+    IngestionStatus,
+    FieldProvenance,
+    ConflictingField,
+    IngestionResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -70,4 +77,9 @@ __all__ = [
     "ResearchRunUpdate",
     "ResearchRunRead",
     "ResearchRunStatus",
+    "DocumentType",
+    "IngestionStatus",
+    "FieldProvenance",
+    "ConflictingField",
+    "IngestionResponse",
 ]

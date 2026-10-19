@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     # Database (configurable via DATABASE_URL, local SQLite default)
     DATABASE_URL: str = "sqlite:///./scholarswarm.db"
     
+    # Document Ingestion limits
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MiB
+    MAX_PDF_PAGES: int = 20
+    MAX_DOCX_UNCOMPRESSED_BYTES: int = 30 * 1024 * 1024  # 30 MiB zip bomb protection
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
