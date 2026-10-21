@@ -484,3 +484,42 @@ def test_m5_whitespace_only_query_rejected():
     # API returns HTTP 422 for whitespace-only query
     api_resp = client.post("/api/v1/research/discover", json={"query": "     "})
     assert api_resp.status_code == 422
+
+
+# ==============================================================================
+# Regression Tests: M6 Carry-forward Hardening
+# ==============================================================================
+
+def test_m6_generic_institution_name_does_not_corroborate_unrelated_domain():
+    """Verify generic institution names like 'City' or 'Global College' do not match unrelated commercial domains."""
+    agent = OfficialSourceVerificationAgent()
+
+    # Generic word 'City' against 'citycommercialbank.com'
+    classification, reason = agent.classify_source("https://citycommercialbank.com/offers", institution_name="City College")
+    assert classification == SourceClassification.UNCERTAIN
+
+    # Generic words 'Global College' against 'globaltelecom.com'
+    classification, reason = agent.classify_source("https://globaltelecom.com/info", institution_name="Global College")
+    assert classification == SourceClassification.UNCERTAIN
+
+    # Genuine non-generic institution name matches
+    classification, reason = agent.classify_source("https://oxford.ac.uk/study", institution_name="Oxford University")
+    assert classification == SourceClassification.OFFICIAL
+
+
+def test_m6_generic_first_word_does_not_falsely_verify_opportunity_name():
+    """Verify that a generic first word like 'International' does not match if the distinctive name is missing."""
+    agent = OfficialSourceVerificationAgent()
+    cand = make_sample_candidate(name="International Excellence Rhodes Award")
+
+    # Page contains 'international' and 'scholarship', but not 'Rhodes'
+    page_text = "This international scholarship offers educational support to students worldwide."
+    claims = agent.assess_claims(cand, "https://www.daad.de/info", page_text)
+    name_claim = next(c for c in claims if c.claim_type == "opportunity_name")
+    assert name_claim.outcome == ClaimOutcome.NOT_FOUND
+
+    # Page contains the distinctive token 'Rhodes'
+    page_text_with_distinctive = "The Rhodes scholarship offers support to students worldwide."
+    claims_supported = agent.assess_claims(cand, "https://www.daad.de/info", page_text_with_distinctive)
+    name_claim_supported = next(c for c in claims_supported if c.claim_type == "opportunity_name")
+    assert name_claim_supported.outcome == ClaimOutcome.SUPPORTED

@@ -13,10 +13,15 @@ from app.schemas.verification import (
     VerificationRequest,
     VerificationResponse,
 )
+from app.schemas.eligibility import (
+    EligibilityAuditRequest,
+    EligibilityAuditResponse,
+)
 from app.services.page_fetcher import PageFetcher
 from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
 from app.services.verification_agent import OfficialSourceVerificationAgent
+from app.services.eligibility_agent import EligibilityAuditAgent
 
 router = APIRouter(prefix="/research", tags=["Research Tools"])
 
@@ -44,6 +49,11 @@ def get_verification_agent(
 ) -> OfficialSourceVerificationAgent:
     """Dependency provider yielding the official-source verification agent."""
     return OfficialSourceVerificationAgent(page_fetcher=fetcher, search_provider=provider)
+
+
+def get_eligibility_agent() -> EligibilityAuditAgent:
+    """Dependency provider yielding the eligibility audit agent."""
+    return EligibilityAuditAgent()
 
 
 @router.post(
@@ -104,3 +114,18 @@ async def verify_candidates(
 ) -> VerificationResponse:
     """Verify discovered candidate scholarship opportunities against official sources."""
     return await agent.verify(request)
+
+
+@router.post(
+    "/eligibility-audit",
+    response_model=EligibilityAuditResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Deterministic Eligibility Audit",
+    description="Perform auditable, evidence-backed criterion evaluation against student profile for admission and scholarship scopes.",
+)
+async def audit_eligibility(
+    request: EligibilityAuditRequest,
+    agent: EligibilityAuditAgent = Depends(get_eligibility_agent),
+) -> EligibilityAuditResponse:
+    """Evaluate student profile against structured, evidence-backed eligibility criteria."""
+    return await agent.audit(request)

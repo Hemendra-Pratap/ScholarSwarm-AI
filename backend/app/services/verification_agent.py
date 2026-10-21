@@ -144,11 +144,20 @@ class OfficialSourceVerificationAgent:
                     f"Domain '{netloc}' belongs to an accredited higher education institution ({edu_tld}).",
                 )
 
-        # 5. Check if institution name plausibly matches domain
-        if institution_name and len(institution_name) >= 4:
-            clean_inst = re.sub(r"[^a-zA-Z0-9]", "", institution_name).lower()
+        # 5. Check if institution name plausibly matches domain with non-generic tokens
+        GENERIC_INST_WORDS = {"city", "global", "international", "college", "university", "institute", "school", "academy", "foundation", "center", "centre"}
+        if institution_name and len(institution_name.strip()) >= 4:
+            inst_tokens = [w.lower() for w in re.findall(r"[a-zA-Z0-9]+", institution_name) if len(w) >= 3 and w.lower() not in GENERIC_INST_WORDS]
             clean_domain = re.sub(r"[^a-zA-Z0-9]", "", netloc.split(".")[0]).lower()
-            if (len(clean_inst) >= 4 and clean_inst in netloc) or (len(clean_domain) >= 4 and clean_domain in clean_inst):
+            # Require at least one distinctive (non-generic) token of >= 4 chars to match or full institution name match
+            if inst_tokens:
+                distinctive_match = any(t in clean_domain for t in inst_tokens if len(t) >= 4)
+                if distinctive_match:
+                    return (
+                        SourceClassification.OFFICIAL,
+                        f"Domain '{netloc}' directly corroborates named institution '{institution_name}'.",
+                    )
+            elif clean_domain and clean_domain in re.sub(r"[^a-zA-Z0-9]", "", institution_name).lower() and len(clean_domain) >= 6:
                 return (
                     SourceClassification.OFFICIAL,
                     f"Domain '{netloc}' directly corroborates named institution '{institution_name}'.",
@@ -204,20 +213,32 @@ class OfficialSourceVerificationAgent:
 
         # Claim 1: Opportunity / Scholarship Name
         claimed_name = opp.name.strip()
-        name_words = [w for w in re.findall(r"\w+", claimed_name) if len(w) > 3]
-        if name_words:
-            # Check if key distinctive words appear in text
-            name_pattern = r"\b" + re.escape(name_words[0]) + r"\b"
-            excerpt = find_verbatim_excerpt(page_text, name_pattern)
-            if excerpt:
+        STOP_WORDS = {"international", "scholarship", "scholarships", "program", "programme", "award", "fellowship", "grants", "master", "masters"}
+        all_words = [w for w in re.findall(r"\w+", claimed_name) if len(w) > 2]
+        distinctive_words = [w for w in all_words if len(w) > 3 and w.lower() not in STOP_WORDS]
+
+        # Use distinctive words if available, otherwise check for a multi-word sequence
+        if distinctive_words:
+            # Check for any distinctive word
+            found_word = None
+            found_excerpt = None
+            for dw in distinctive_words:
+                pattern = r"\b" + re.escape(dw) + r"\b"
+                excerpt = find_verbatim_excerpt(page_text, pattern)
+                if excerpt:
+                    found_word = dw
+                    found_excerpt = excerpt
+                    break
+
+            if found_excerpt and found_word:
                 claims.append(
                     ClaimAssessment(
                         claim_type="opportunity_name",
                         claimed_value=claimed_name,
                         outcome=ClaimOutcome.SUPPORTED,
                         source_url=official_url,
-                        excerpt=excerpt,
-                        explanation=f"Official page mentions key term '{name_words[0]}' from scholarship name.",
+                        excerpt=found_excerpt,
+                        explanation=f"Official page mentions key distinctive term '{found_word}' from scholarship name.",
                     )
                 )
             else:
@@ -229,6 +250,32 @@ class OfficialSourceVerificationAgent:
                         source_url=official_url,
                         excerpt=None,
                         explanation="Distinctive terms of opportunity name were not found on the official page.",
+                    )
+                )
+        elif len(all_words) >= 2:
+            # If all words are generic, require at least a two-word phrase match
+            phrase = f"{all_words[0]}\\s+{all_words[1]}"
+            excerpt = find_verbatim_excerpt(page_text, phrase)
+            if excerpt:
+                claims.append(
+                    ClaimAssessment(
+                        claim_type="opportunity_name",
+                        claimed_value=claimed_name,
+                        outcome=ClaimOutcome.SUPPORTED,
+                        source_url=official_url,
+                        excerpt=excerpt,
+                        explanation=f"Official page mentions name phrase '{all_words[0]} {all_words[1]}'.",
+                    )
+                )
+            else:
+                claims.append(
+                    ClaimAssessment(
+                        claim_type="opportunity_name",
+                        claimed_value=claimed_name,
+                        outcome=ClaimOutcome.NOT_FOUND,
+                        source_url=official_url,
+                        excerpt=None,
+                        explanation="Opportunity name phrase was not found on the official page.",
                     )
                 )
         else:

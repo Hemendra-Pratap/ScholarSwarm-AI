@@ -5,6 +5,7 @@ from app.services.page_fetcher import PageFetcher, HTMLTextExtractor
 from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
 from app.services.verification_agent import OfficialSourceVerificationAgent
+from app.services.eligibility_agent import EligibilityAuditAgent
 
 __all__ = [
     "DocumentParser",
@@ -19,4 +20,5 @@ __all__ = [
     "TavilySearchProvider",
     "ScholarshipDiscoveryAgent",
     "OfficialSourceVerificationAgent",
+    "EligibilityAuditAgent",
 ]

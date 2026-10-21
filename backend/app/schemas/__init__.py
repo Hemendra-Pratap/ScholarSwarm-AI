@@ -70,6 +70,16 @@ from app.schemas.verification import (
     VerificationRequest,
     VerificationResponse,
 )
+from app.schemas.eligibility import (
+    CriterionScope,
+    RuleOperator,
+    OverallEligibilityClassification,
+    CriterionRuleDefinition,
+    EvaluatedCriterion,
+    ScopeAuditResult,
+    EligibilityAuditRequest,
+    EligibilityAuditResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -126,4 +136,12 @@ __all__ = [
     "CandidateVerificationReport",
     "VerificationRequest",
     "VerificationResponse",
+    "CriterionScope",
+    "RuleOperator",
+    "OverallEligibilityClassification",
+    "CriterionRuleDefinition",
+    "EvaluatedCriterion",
+    "ScopeAuditResult",
+    "EligibilityAuditRequest",
+    "EligibilityAuditResponse",
 ]
