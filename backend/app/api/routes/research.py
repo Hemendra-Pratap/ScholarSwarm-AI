@@ -9,9 +9,14 @@ from app.schemas.discovery import (
     DiscoveryRequest,
     DiscoveryResponse,
 )
+from app.schemas.verification import (
+    VerificationRequest,
+    VerificationResponse,
+)
 from app.services.page_fetcher import PageFetcher
 from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
+from app.services.verification_agent import OfficialSourceVerificationAgent
 
 router = APIRouter(prefix="/research", tags=["Research Tools"])
 
@@ -31,6 +36,14 @@ def get_discovery_agent(
 ) -> ScholarshipDiscoveryAgent:
     """Dependency provider yielding the scholarship discovery agent."""
     return ScholarshipDiscoveryAgent(search_provider=provider)
+
+
+def get_verification_agent(
+    fetcher: PageFetcher = Depends(get_page_fetcher),
+    provider: SearchProvider = Depends(get_search_provider),
+) -> OfficialSourceVerificationAgent:
+    """Dependency provider yielding the official-source verification agent."""
+    return OfficialSourceVerificationAgent(page_fetcher=fetcher, search_provider=provider)
 
 
 @router.post(
@@ -76,3 +89,18 @@ async def discover_scholarships(
 ) -> DiscoveryResponse:
     """Discover candidate scholarships and university programs matching research intent."""
     return await agent.discover(request)
+
+
+@router.post(
+    "/verify",
+    response_model=VerificationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify Candidates Against Official Sources",
+    description="Evaluate discovered scholarship opportunities against official institutional sources with claim-level evidence and audits.",
+)
+async def verify_candidates(
+    request: VerificationRequest,
+    agent: OfficialSourceVerificationAgent = Depends(get_verification_agent),
+) -> VerificationResponse:
+    """Verify discovered candidate scholarship opportunities against official sources."""
+    return await agent.verify(request)

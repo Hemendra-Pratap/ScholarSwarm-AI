@@ -60,6 +60,16 @@ from app.schemas.discovery import (
     DiscoveryRequest,
     DiscoveryResponse,
 )
+from app.schemas.verification import (
+    SourceClassification,
+    ClaimOutcome,
+    VerificationReportStatus,
+    SourceAssessment,
+    ClaimAssessment,
+    CandidateVerificationReport,
+    VerificationRequest,
+    VerificationResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -108,4 +118,12 @@ __all__ = [
     "DiscoveredCandidate",
     "DiscoveryRequest",
     "DiscoveryResponse",
+    "SourceClassification",
+    "ClaimOutcome",
+    "VerificationReportStatus",
+    "SourceAssessment",
+    "ClaimAssessment",
+    "CandidateVerificationReport",
+    "VerificationRequest",
+    "VerificationResponse",
 ]

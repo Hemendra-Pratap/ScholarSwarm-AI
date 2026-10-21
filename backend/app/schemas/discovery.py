@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.common import UTCDateTime
 from app.schemas.opportunity import OpportunityBase
 
@@ -59,6 +59,14 @@ class DiscoveryRequest(BaseModel):
         le=30,
         description="Maximum number of candidate opportunities to return"
     )
+
+    @field_validator("query")
+    @classmethod
+    def validate_query_not_whitespace_only(cls, v: str) -> str:
+        trimmed = v.strip()
+        if len(trimmed) < 2:
+            raise ValueError("Query must contain at least 2 non-whitespace characters.")
+        return trimmed
 
     model_config = ConfigDict(extra="forbid")
 

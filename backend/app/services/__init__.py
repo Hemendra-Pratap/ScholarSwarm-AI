@@ -4,6 +4,7 @@ from app.services.url_validator import URLValidator, URLValidationError
 from app.services.page_fetcher import PageFetcher, HTMLTextExtractor
 from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
+from app.services.verification_agent import OfficialSourceVerificationAgent
 
 __all__ = [
     "DocumentParser",
@@ -17,4 +18,5 @@ __all__ = [
     "SearchProvider",
     "TavilySearchProvider",
     "ScholarshipDiscoveryAgent",
+    "OfficialSourceVerificationAgent",
 ]
