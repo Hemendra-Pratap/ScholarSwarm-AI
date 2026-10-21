@@ -54,6 +54,12 @@ from app.schemas.research import (
     PageFetchRequest,
     PageFetchResponse,
 )
+from app.schemas.discovery import (
+    DiscoveryStatus,
+    DiscoveredCandidate,
+    DiscoveryRequest,
+    DiscoveryResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -98,4 +104,8 @@ __all__ = [
     "SearchResponse",
     "PageFetchRequest",
     "PageFetchResponse",
+    "DiscoveryStatus",
+    "DiscoveredCandidate",
+    "DiscoveryRequest",
+    "DiscoveryResponse",
 ]

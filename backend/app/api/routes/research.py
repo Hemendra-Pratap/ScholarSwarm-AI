@@ -5,8 +5,13 @@ from app.schemas.research import (
     SearchRequest,
     SearchResponse,
 )
+from app.schemas.discovery import (
+    DiscoveryRequest,
+    DiscoveryResponse,
+)
 from app.services.page_fetcher import PageFetcher
 from app.services.search_provider import SearchProvider, TavilySearchProvider
+from app.services.discovery_agent import ScholarshipDiscoveryAgent
 
 router = APIRouter(prefix="/research", tags=["Research Tools"])
 
@@ -19,6 +24,13 @@ def get_search_provider() -> SearchProvider:
 def get_page_fetcher() -> PageFetcher:
     """Dependency provider yielding the secure public page fetcher."""
     return PageFetcher()
+
+
+def get_discovery_agent(
+    provider: SearchProvider = Depends(get_search_provider),
+) -> ScholarshipDiscoveryAgent:
+    """Dependency provider yielding the scholarship discovery agent."""
+    return ScholarshipDiscoveryAgent(search_provider=provider)
 
 
 @router.post(
@@ -49,3 +61,18 @@ async def fetch_page(
 ) -> PageFetchResponse:
     """Fetch public web page text safely with SSRF protections."""
     return await fetcher.fetch(url=request.url, max_length=request.max_length)
+
+
+@router.post(
+    "/discover",
+    response_model=DiscoveryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Discover Candidate Scholarships",
+    description="Query search provider with bounded queries and extract normalized, deduplicated scholarship opportunities without fabrication.",
+)
+async def discover_scholarships(
+    request: DiscoveryRequest,
+    agent: ScholarshipDiscoveryAgent = Depends(get_discovery_agent),
+) -> DiscoveryResponse:
+    """Discover candidate scholarships and university programs matching research intent."""
+    return await agent.discover(request)

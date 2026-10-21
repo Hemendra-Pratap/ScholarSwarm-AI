@@ -3,6 +3,7 @@ from app.services.profile_extractor import ProfileExtractor
 from app.services.url_validator import URLValidator, URLValidationError
 from app.services.page_fetcher import PageFetcher, HTMLTextExtractor
 from app.services.search_provider import SearchProvider, TavilySearchProvider
+from app.services.discovery_agent import ScholarshipDiscoveryAgent
 
 __all__ = [
     "DocumentParser",
@@ -15,4 +16,5 @@ __all__ = [
     "HTMLTextExtractor",
     "SearchProvider",
     "TavilySearchProvider",
+    "ScholarshipDiscoveryAgent",
 ]
