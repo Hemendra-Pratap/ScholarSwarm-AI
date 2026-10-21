@@ -1,0 +1,51 @@
+from fastapi import APIRouter, Depends, status
+from app.schemas.research import (
+    PageFetchRequest,
+    PageFetchResponse,
+    SearchRequest,
+    SearchResponse,
+)
+from app.services.page_fetcher import PageFetcher
+from app.services.search_provider import SearchProvider, TavilySearchProvider
+
+router = APIRouter(prefix="/research", tags=["Research Tools"])
+
+
+def get_search_provider() -> SearchProvider:
+    """Dependency provider yielding the configured search provider adapter."""
+    return TavilySearchProvider()
+
+
+def get_page_fetcher() -> PageFetcher:
+    """Dependency provider yielding the secure public page fetcher."""
+    return PageFetcher()
+
+
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Search External Web Resources",
+    description="Query external search provider (Tavily) with structured request and normalized results. Returns provider_not_configured if API key is not set.",
+)
+async def search_web(
+    request: SearchRequest,
+    provider: SearchProvider = Depends(get_search_provider),
+) -> SearchResponse:
+    """Execute search query via configured search provider."""
+    return await provider.search(request)
+
+
+@router.post(
+    "/fetch-page",
+    response_model=PageFetchResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Secure Public Page Retrieval",
+    description="Retrieve and extract clean text from a public web page with strict SSRF defense, size bounds, and redirect validation.",
+)
+async def fetch_page(
+    request: PageFetchRequest,
+    fetcher: PageFetcher = Depends(get_page_fetcher),
+) -> PageFetchResponse:
+    """Fetch public web page text safely with SSRF protections."""
+    return await fetcher.fetch(url=request.url, max_length=request.max_length)

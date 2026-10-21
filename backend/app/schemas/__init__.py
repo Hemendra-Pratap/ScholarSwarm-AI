@@ -45,6 +45,15 @@ from app.schemas.ingestion import (
     ConflictingField,
     IngestionResponse,
 )
+from app.schemas.research import (
+    RetrievalStatus,
+    SearchStatus,
+    SearchResultItem,
+    SearchRequest,
+    SearchResponse,
+    PageFetchRequest,
+    PageFetchResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -82,4 +91,11 @@ __all__ = [
     "FieldProvenance",
     "ConflictingField",
     "IngestionResponse",
+    "RetrievalStatus",
+    "SearchStatus",
+    "SearchResultItem",
+    "SearchRequest",
+    "SearchResponse",
+    "PageFetchRequest",
+    "PageFetchResponse",
 ]
