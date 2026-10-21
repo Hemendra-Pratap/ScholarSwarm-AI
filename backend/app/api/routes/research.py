@@ -17,11 +17,16 @@ from app.schemas.eligibility import (
     EligibilityAuditRequest,
     EligibilityAuditResponse,
 )
+from app.schemas.ranking import (
+    RankingRequest,
+    RankingResponse,
+)
 from app.services.page_fetcher import PageFetcher
 from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
 from app.services.verification_agent import OfficialSourceVerificationAgent
 from app.services.eligibility_agent import EligibilityAuditAgent
+from app.services.ranking_agent import RankingAndStrategyAgent
 
 router = APIRouter(prefix="/research", tags=["Research Tools"])
 
@@ -54,6 +59,11 @@ def get_verification_agent(
 def get_eligibility_agent() -> EligibilityAuditAgent:
     """Dependency provider yielding the eligibility audit agent."""
     return EligibilityAuditAgent()
+
+
+def get_ranking_agent() -> RankingAndStrategyAgent:
+    """Dependency provider yielding the ranking and application strategy agent."""
+    return RankingAndStrategyAgent()
 
 
 @router.post(
@@ -129,3 +139,18 @@ async def audit_eligibility(
 ) -> EligibilityAuditResponse:
     """Evaluate student profile against structured, evidence-backed eligibility criteria."""
     return await agent.audit(request)
+
+
+@router.post(
+    "/rank",
+    response_model=RankingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Deterministic Opportunity Ranking & Application Strategy",
+    description="Rank candidate opportunities deterministically using eligibility as a gate, computing transparent profile-fit scores, and generating actionable next steps.",
+)
+async def rank_opportunities(
+    request: RankingRequest,
+    agent: RankingAndStrategyAgent = Depends(get_ranking_agent),
+) -> RankingResponse:
+    """Rank candidate opportunities and generate prioritized application action plan."""
+    return await agent.rank(request)

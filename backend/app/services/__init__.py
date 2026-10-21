@@ -6,6 +6,7 @@ from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
 from app.services.verification_agent import OfficialSourceVerificationAgent
 from app.services.eligibility_agent import EligibilityAuditAgent
+from app.services.ranking_agent import RankingAndStrategyAgent
 
 __all__ = [
     "DocumentParser",
@@ -21,4 +22,5 @@ __all__ = [
     "ScholarshipDiscoveryAgent",
     "OfficialSourceVerificationAgent",
     "EligibilityAuditAgent",
+    "RankingAndStrategyAgent",
 ]

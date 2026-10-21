@@ -80,6 +80,18 @@ from app.schemas.eligibility import (
     EligibilityAuditRequest,
     EligibilityAuditResponse,
 )
+from app.schemas.ranking import (
+    DeadlineFeasibilityStatus,
+    ActionItemPriority,
+    ActionItemStatus,
+    ApplicationActionItem,
+    ScoreComponentDetail,
+    RankedOpportunityItem,
+    ExcludedOpportunityItem,
+    CandidateOpportunityInput,
+    RankingRequest,
+    RankingResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -144,4 +156,14 @@ __all__ = [
     "ScopeAuditResult",
     "EligibilityAuditRequest",
     "EligibilityAuditResponse",
+    "DeadlineFeasibilityStatus",
+    "ActionItemPriority",
+    "ActionItemStatus",
+    "ApplicationActionItem",
+    "ScoreComponentDetail",
+    "RankedOpportunityItem",
+    "ExcludedOpportunityItem",
+    "CandidateOpportunityInput",
+    "RankingRequest",
+    "RankingResponse",
 ]
