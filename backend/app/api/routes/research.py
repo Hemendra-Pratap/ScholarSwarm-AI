@@ -1,4 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.models.entities import StudentProfileModel
+from app.schemas.orchestration import (
+    ResearchRunExecutionRequest,
+    ResearchRunExecutionResponse,
+)
 from app.schemas.research import (
     PageFetchRequest,
     PageFetchResponse,
@@ -21,12 +28,14 @@ from app.schemas.ranking import (
     RankingRequest,
     RankingResponse,
 )
+from app.schemas.student_profile import StudentProfileBase
 from app.services.page_fetcher import PageFetcher
 from app.services.search_provider import SearchProvider, TavilySearchProvider
 from app.services.discovery_agent import ScholarshipDiscoveryAgent
 from app.services.verification_agent import OfficialSourceVerificationAgent
 from app.services.eligibility_agent import EligibilityAuditAgent
 from app.services.ranking_agent import RankingAndStrategyAgent
+from app.services.orchestration_service import OrchestrationService
 
 router = APIRouter(prefix="/research", tags=["Research Tools"])
 
@@ -64,6 +73,21 @@ def get_eligibility_agent() -> EligibilityAuditAgent:
 def get_ranking_agent() -> RankingAndStrategyAgent:
     """Dependency provider yielding the ranking and application strategy agent."""
     return RankingAndStrategyAgent()
+
+
+def get_orchestration_service(
+    discovery_agent: ScholarshipDiscoveryAgent = Depends(get_discovery_agent),
+    verification_agent: OfficialSourceVerificationAgent = Depends(get_verification_agent),
+    eligibility_agent: EligibilityAuditAgent = Depends(get_eligibility_agent),
+    ranking_agent: RankingAndStrategyAgent = Depends(get_ranking_agent),
+) -> OrchestrationService:
+    """Dependency provider yielding the multi-agent orchestration service."""
+    return OrchestrationService(
+        discovery_agent=discovery_agent,
+        verification_agent=verification_agent,
+        eligibility_agent=eligibility_agent,
+        ranking_agent=ranking_agent,
+    )
 
 
 @router.post(
@@ -154,3 +178,68 @@ async def rank_opportunities(
 ) -> RankingResponse:
     """Rank candidate opportunities and generate prioritized application action plan."""
     return await agent.rank(request)
+
+
+@router.post(
+    "/runs",
+    response_model=ResearchRunExecutionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Execute Multi-Agent Scholarship Research Run",
+    description="Synchronously coordinate scholarship discovery, official-source verification, eligibility audit, and ranking through a central LangGraph orchestrator.",
+)
+async def create_research_run(
+    request: ResearchRunExecutionRequest,
+    orchestrator: OrchestrationService = Depends(get_orchestration_service),
+    db: Session = Depends(get_db),
+) -> ResearchRunExecutionResponse:
+    """Execute end-to-end multi-agent orchestration run with typed output and execution trace."""
+    # 1. Resolve student profile: either from direct payload or confirmed database profile
+    profile: StudentProfileBase | None = None
+    profile_id_str: str | None = None
+
+    if request.student_profile is not None:
+        profile = request.student_profile
+        if request.profile_id is not None:
+            profile_id_str = str(request.profile_id)
+    elif request.profile_id is not None:
+        profile_id_str = str(request.profile_id)
+        db_profile = db.query(StudentProfileModel).filter(StudentProfileModel.id == request.profile_id).first()
+        if not db_profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Confirmed student profile with ID '{request.profile_id}' not found.",
+            )
+        profile = StudentProfileBase.model_validate(db_profile)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Either a student_profile object or a valid profile_id referencing a confirmed profile must be provided.",
+        )
+
+    # 2. Execute orchestration workflow
+    state = await orchestrator.execute_run(
+        student_profile=profile,
+        discovery_request=request.discovery,
+        profile_id=profile_id_str,
+        max_shortlist_size=request.max_shortlist_size,
+        reference_date=request.reference_date,
+        db=db,
+    )
+
+    # 3. Assemble typed response contract
+    from datetime import datetime, timezone
+    return ResearchRunExecutionResponse(
+        run_id=state.run_id,
+        profile_id=state.profile_id,
+        status=state.terminal_status,
+        is_partial=state.is_partial,
+        discovery_status=state.discovery_status,
+        candidates=state.discovered_candidates,
+        verification_reports=state.verification_reports,
+        eligibility_assessments=state.eligibility_assessments,
+        ranking=state.ranking_response,
+        events=state.events,
+        warnings=state.warnings,
+        failure_summary=state.sanitized_failure_info,
+        executed_at=datetime.now(timezone.utc),
+    )

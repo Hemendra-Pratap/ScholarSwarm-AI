@@ -93,6 +93,10 @@ from app.schemas.ranking import (
     RankingResponse,
 )
 
+# NOTE: app.schemas.orchestration is NOT imported here to avoid circular import.
+# It depends on app.graph.state which in turn imports from app.schemas.common
+# through this __init__. Import orchestration schemas directly where needed.
+
 __all__ = [
     "HealthResponse",
     "StudentProfileBase",
