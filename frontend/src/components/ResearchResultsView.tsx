@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   ShieldAlert,
+  Sparkles,
 } from 'lucide-react'
 import type {
   ResearchRunExecutionResponse,
@@ -20,9 +21,13 @@ import type {
 
 interface ResearchResultsViewProps {
   results: ResearchRunExecutionResponse
+  onSelectOpportunityForSOP?: (opportunityName: string) => void
 }
 
-export const ResearchResultsView: React.FC<ResearchResultsViewProps> = ({ results }) => {
+export const ResearchResultsView: React.FC<ResearchResultsViewProps> = ({
+  results,
+  onSelectOpportunityForSOP,
+}) => {
   const [activeTab, setActiveTab] = useState<'recommended' | 'review' | 'excluded' | 'actions' | 'discovery'>(
     'recommended',
   )
@@ -319,9 +324,21 @@ export const ResearchResultsView: React.FC<ResearchResultsViewProps> = ({ result
                     )}
                   </button>
 
-                  <span className="text-[11px] text-slate-400">
-                    Coverage: {Math.round(item.score_coverage_pct)}% data assessable
-                  </span>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-[11px] text-slate-400">
+                      Coverage: {Math.round(item.score_coverage_pct)}% data assessable
+                    </span>
+                    {onSelectOpportunityForSOP && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectOpportunityForSOP(item.opportunity.name)}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-brand-navy text-white text-[11px] font-semibold hover:bg-brand-navy/90 transition shadow-xs"
+                      >
+                        <Sparkles className="h-3 w-3 text-amber-300" />
+                        <span>Draft SOP in Studio →</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Expanded Breakdown */}
@@ -440,6 +457,19 @@ export const ResearchResultsView: React.FC<ResearchResultsViewProps> = ({ result
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-800">
                     <span className="font-semibold">Unresolved Criteria: </span>
                     <span>{item.unknown_criteria.join(', ')}</span>
+                  </div>
+                )}
+
+                {onSelectOpportunityForSOP && (
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => onSelectOpportunityForSOP(item.opportunity.name)}
+                      className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-brand-navy text-white text-[11px] font-semibold hover:bg-brand-navy/90 transition shadow-xs"
+                    >
+                      <Sparkles className="h-3 w-3 text-amber-300" />
+                      <span>Draft SOP in Studio →</span>
+                    </button>
                   </div>
                 )}
               </div>

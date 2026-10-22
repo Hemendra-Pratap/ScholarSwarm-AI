@@ -366,3 +366,27 @@ export interface ResearchRunExecutionResponse {
   failure_summary?: string | null
   executed_at: string
 }
+
+export interface FactProvenanceItem {
+  field_name: string
+  value: string
+  source: string
+  is_verified: boolean
+}
+
+export interface SOPDraftRequest {
+  student_profile: StudentProfileBase | StudentProfileRead
+  opportunity: RankedOpportunityItem
+  additional_notes?: string | null
+}
+
+export interface SOPDraftResponse {
+  opportunity_name: string
+  institution: string
+  draft_text: string
+  placeholders: string[]
+  confirmed_facts_used: FactProvenanceItem[]
+  unverified_claims: string[]
+  source_citations: string[]
+  disclaimer: string
+}

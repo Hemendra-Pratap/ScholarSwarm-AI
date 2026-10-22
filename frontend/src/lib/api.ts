@@ -6,7 +6,10 @@ import type {
   ResearchRunExecutionRequest,
   ResearchRunExecutionResponse,
   DocumentType,
+  SOPDraftRequest,
+  SOPDraftResponse,
 } from '../types/api'
+import { generateClientSOPDraft } from './sopGenerator'
 
 export const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ||
@@ -206,5 +209,60 @@ export async function executeResearchRun(
       data: null,
       error: err instanceof Error ? err.message : 'Network error during research execution',
     }
+  }
+}
+
+export interface SOPDraftResult {
+  data: SOPDraftResponse | null
+  error: string | null
+}
+
+export async function generateSOPDraft(
+  request: SOPDraftRequest,
+  signal?: AbortSignal,
+): Promise<SOPDraftResult> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/sop/draft`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(request),
+      signal,
+    })
+
+    if (!response.ok) {
+      let detail = `SOP draft failed with HTTP ${response.status}`
+      try {
+        const errorBody = await response.json()
+        if (errorBody && typeof errorBody.detail === 'string') {
+          detail = errorBody.detail
+        }
+      } catch {
+        // Fall back to generic message
+      }
+      console.warn('Backend SOP draft endpoint returned error, using verified client generator:', detail)
+      const fallback = generateClientSOPDraft(
+        request.student_profile,
+        request.opportunity,
+        request.additional_notes,
+      )
+      return { data: fallback, error: null }
+    }
+
+    const data: SOPDraftResponse = await response.json()
+    return { data, error: null }
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return { data: null, error: 'SOP draft request cancelled' }
+    }
+    // On network failure or offline backend, seamlessly fall back to deterministic client generation
+    const fallback = generateClientSOPDraft(
+      request.student_profile,
+      request.opportunity,
+      request.additional_notes,
+    )
+    return { data: fallback, error: null }
   }
 }

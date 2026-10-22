@@ -6,6 +6,7 @@ import { ProfileUploadReview } from './components/ProfileUploadReview'
 import { ResearchWorkspace } from './components/ResearchWorkspace'
 import { ExecutionTrace } from './components/ExecutionTrace'
 import { ResearchResultsView } from './components/ResearchResultsView'
+import { SOPStudio } from './components/SOPStudio'
 import { fetchBackendHealth, executeResearchRun } from './lib/api'
 import type {
   HealthResponse,
@@ -24,7 +25,7 @@ export function App() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 
   // Navigation tab for smooth desktop/mobile workflow
-  const [activeWorkflowTab, setActiveWorkflowTab] = useState<'profile' | 'research' | 'results'>('profile')
+  const [activeWorkflowTab, setActiveWorkflowTab] = useState<'profile' | 'research' | 'results' | 'sop'>('profile')
 
   // Confirmed Profile State
   const [confirmedProfile, setConfirmedProfile] = useState<StudentProfileRead | null>(null)
@@ -33,6 +34,7 @@ export function App() {
   const [isRunning, setIsRunning] = useState<boolean>(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [runResults, setRunResults] = useState<ResearchRunExecutionResponse | null>(null)
+  const [selectedOpportunityForSOP, setSelectedOpportunityForSOP] = useState<string | null>(null)
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true)
@@ -142,6 +144,22 @@ export function App() {
                 <span className="w-2 h-2 rounded-full bg-brand-indigo" />
               )}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveWorkflowTab('sop')}
+              className={`flex items-center space-x-2 pb-2 text-xs sm:text-sm font-semibold transition border-b-2 -mb-3 px-1 ${
+                activeWorkflowTab === 'sop'
+                  ? 'border-brand-indigo text-brand-indigo'
+                  : 'border-transparent text-slate-500 hover:text-brand-navy'
+              }`}
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>4. SOP Studio</span>
+              {runResults?.ranking && (
+                <span className="w-2 h-2 rounded-full bg-brand-teal" title="Ready for Drafting" />
+              )}
+            </button>
           </div>
 
           <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-400">
@@ -209,10 +227,26 @@ export function App() {
                   failureSummary={runResults.failure_summary}
                 />
 
-                <ResearchResultsView results={runResults} />
+                <ResearchResultsView
+                  results={runResults}
+                  onSelectOpportunityForSOP={(name) => {
+                    setSelectedOpportunityForSOP(name)
+                    setActiveWorkflowTab('sop')
+                  }}
+                />
               </>
             )}
           </div>
+        )}
+
+        {activeWorkflowTab === 'sop' && (
+          <SOPStudio
+            confirmedProfile={confirmedProfile}
+            runResults={runResults}
+            initialOpportunityName={selectedOpportunityForSOP}
+            onNavigateToProfile={() => setActiveWorkflowTab('profile')}
+            onNavigateToResearch={() => setActiveWorkflowTab('research')}
+          />
         )}
 
         {/* Backend Connectivity Status */}

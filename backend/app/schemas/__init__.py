@@ -92,6 +92,11 @@ from app.schemas.ranking import (
     RankingRequest,
     RankingResponse,
 )
+from app.schemas.sop import (
+    SOPDraftRequest,
+    SOPDraftResponse,
+    FactProvenanceItem,
+)
 
 # NOTE: app.schemas.orchestration is NOT imported here to avoid circular import.
 # It depends on app.graph.state which in turn imports from app.schemas.common
@@ -170,4 +175,7 @@ __all__ = [
     "CandidateOpportunityInput",
     "RankingRequest",
     "RankingResponse",
+    "SOPDraftRequest",
+    "SOPDraftResponse",
+    "FactProvenanceItem",
 ]
