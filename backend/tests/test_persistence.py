@@ -31,6 +31,35 @@ def test_database_initialization(db_session: Session):
     assert opps == []
 
 
+def test_app_lifespan_initializes_database_tables(tmp_path, monkeypatch):
+    """Verify that FastAPI application lifespan initializes all required database tables."""
+    from sqlalchemy import create_engine, inspect
+    from fastapi.testclient import TestClient
+    from app.main import app
+    import app.core.database as db_mod
+
+    db_file = tmp_path / "lifespan_test.db"
+    test_engine = create_engine(f"sqlite:///{db_file}")
+
+    monkeypatch.setattr(db_mod, "engine", test_engine)
+
+    with TestClient(app) as client:
+        resp = client.get("/api/v1/health")
+        assert resp.status_code == 200
+
+    inspector = inspect(test_engine)
+    table_names = set(inspector.get_table_names())
+    expected_tables = {
+        "student_profiles",
+        "opportunities",
+        "evidence_sources",
+        "research_runs",
+        "eligibility_assessments",
+    }
+    assert expected_tables.issubset(table_names)
+
+
+
 def test_create_and_retrieve_student_profile(db_session: Session):
     """Verify round-trip persistence of a student profile with structured JSON data."""
     profile_id = uuid.uuid4()

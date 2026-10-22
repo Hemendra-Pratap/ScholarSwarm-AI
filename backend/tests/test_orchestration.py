@@ -828,3 +828,69 @@ def test_api_route_research_run_nonexistent_profile_id_rejected(db_session):
         assert "not found" in resp.json()["detail"].lower()
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+
+def test_api_route_research_run_with_persisted_profile_id(db_session):
+    """Regression test: verify POST /api/v1/research/runs succeeds when referencing a persisted profile by profile_id."""
+    from app.models.entities import StudentProfileModel
+    from app.api.routes.research import get_orchestration_service
+    import uuid
+
+    app.dependency_overrides[get_db] = lambda: db_session
+    mock_service = OrchestrationService(
+        MockDiscoveryAgent(),
+        MockVerificationAgent(),
+        MockEligibilityAgent(),
+        RankingAndStrategyAgent(),
+    )
+    app.dependency_overrides[get_orchestration_service] = lambda: mock_service
+
+    try:
+        # Create and persist a profile into the test database
+        profile_id = uuid.uuid4()
+        db_profile = StudentProfileModel(
+            id=profile_id,
+            name="Elena Rostova",
+            degree_program="Bachelor of Science",
+            field_of_study="Computer Science",
+            institution="Technical University of Munich",
+            country="Germany",
+            academic_stage="final_year_undergraduate",
+            academic_score={"score": 3.9, "scale": 4.0},
+            target_destinations=["Germany", "Switzerland"],
+            academic_interests=["Distributed Systems", "Machine Learning"],
+            projects_experiences=[
+                {
+                    "title": "Distributed Consensus Engine",
+                    "role": "Core Developer",
+                    "summary": "Implemented Raft consensus in Rust.",
+                }
+            ],
+            budget_constraint={"requires_full_funding": True, "max_annual_budget": 0.0, "currency": "EUR"},
+            public_profile_urls=[],
+        )
+        db_session.add(db_profile)
+        db_session.commit()
+
+        payload = {
+            "profile_id": str(profile_id),
+            "discovery": {
+                "query": "computer science scholarships",
+                "destinations": ["Germany", "Switzerland"],
+                "study_level": "master",
+                "max_candidates": 3,
+            },
+            "max_shortlist_size": 3,
+        }
+
+        resp = client.post("/api/v1/research/runs", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "run_id" in data
+        assert data["profile_id"] == str(profile_id)
+        assert data["status"] in ("completed", "partial")
+        assert len(data["candidates"]) == 1
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        app.dependency_overrides.pop(get_orchestration_service, None)
+

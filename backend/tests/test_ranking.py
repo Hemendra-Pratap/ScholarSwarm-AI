@@ -428,3 +428,85 @@ def test_api_route_rank_endpoint_rejects_empty_candidates():
     }
     res = client.post("/api/v1/research/rank", json=payload)
     assert res.status_code == 422
+
+
+# --- Regression Tests for Academic Score & Scale Grounding ---
+
+@pytest.mark.anyio
+async def test_academic_score_missing_scale_does_not_fabricate_four_scale_or_ratio():
+    agent = RankingAndStrategyAgent()
+    # Score 9.01 without scale (e.g., 10-point scale)
+    profile = make_sample_profile(score=9.01, scale=None)
+    opp = make_sample_opportunity()
+    cand = CandidateOpportunityInput(
+        opportunity=opp,
+        eligibility_classification=OverallEligibilityClassification.ELIGIBLE,
+    )
+    request = RankingRequest(
+        student_profile=profile,
+        candidates=[cand],
+        reference_date=datetime(2026, 10, 1, 0, 0, tzinfo=timezone.utc),
+    )
+    response = await agent.rank(request)
+    assert len(response.recommended_shortlist) == 1
+    item = response.recommended_shortlist[0]
+    strengths_joined = " ".join(item.main_strengths)
+    gaps_joined = " ".join(item.main_gaps)
+
+    # Must NOT claim 9.01/4.0 or fabricated 100%
+    assert "9.01/4.0" not in strengths_joined
+    assert "100%" not in strengths_joined
+    # Must report documented score with unstated scale
+    assert "9.01" in strengths_joined
+    assert "grading scale unstated" in strengths_joined
+
+
+@pytest.mark.anyio
+async def test_academic_score_valid_explicit_scale_preserved():
+    agent = RankingAndStrategyAgent()
+    # Explicit 9.01 out of 10.0 scale
+    profile = make_sample_profile(score=9.01, scale=10.0)
+    opp = make_sample_opportunity()
+    cand = CandidateOpportunityInput(
+        opportunity=opp,
+        eligibility_classification=OverallEligibilityClassification.ELIGIBLE,
+    )
+    request = RankingRequest(
+        student_profile=profile,
+        candidates=[cand],
+        reference_date=datetime(2026, 10, 1, 0, 0, tzinfo=timezone.utc),
+    )
+    response = await agent.rank(request)
+    assert len(response.recommended_shortlist) == 1
+    item = response.recommended_shortlist[0]
+    strengths_joined = " ".join(item.main_strengths)
+
+    # Preserves explicit scale and accurate ratio (90%)
+    assert "9.01/10.0 (90%)" in strengths_joined
+
+
+@pytest.mark.anyio
+async def test_academic_score_inconsistent_scale_score_exceeds_scale():
+    agent = RankingAndStrategyAgent()
+    # Erroneous input: score 5.0 on scale 4.0
+    profile = make_sample_profile(score=5.0, scale=4.0)
+    opp = make_sample_opportunity()
+    cand = CandidateOpportunityInput(
+        opportunity=opp,
+        eligibility_classification=OverallEligibilityClassification.ELIGIBLE,
+    )
+    request = RankingRequest(
+        student_profile=profile,
+        candidates=[cand],
+        reference_date=datetime(2026, 10, 1, 0, 0, tzinfo=timezone.utc),
+    )
+    response = await agent.rank(request)
+    assert len(response.recommended_shortlist) == 1
+    item = response.recommended_shortlist[0]
+    strengths_joined = " ".join(item.main_strengths)
+    gaps_joined = " ".join(item.main_gaps)
+
+    # Must NOT emit invalid fraction in strengths
+    assert "5.0/4.0" not in strengths_joined
+    # Must identify gap requiring transcript verification
+    assert "exceeds stated scale" in gaps_joined

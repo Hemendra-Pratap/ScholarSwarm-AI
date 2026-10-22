@@ -55,5 +55,6 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db(target_engine=None) -> None:
     """Create all tables in the database if they do not exist."""
+    import app.models  # noqa: F401 - ensure all declarative models are registered on Base.metadata
     eng = target_engine or engine
     Base.metadata.create_all(bind=eng)

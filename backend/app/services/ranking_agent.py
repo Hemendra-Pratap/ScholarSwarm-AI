@@ -352,14 +352,26 @@ class RankingAndStrategyAgent:
         if profile.academic_score and profile.academic_score.score is not None:
             components_found += 1
             score = profile.academic_score.score
-            scale = profile.academic_score.scale or 4.0
-            ratio = min(1.0, max(0.0, score / scale))
-            score_pts = ratio * 40.0
-            points += score_pts
-            if ratio >= 0.85:
-                strengths.append(f"Strong academic record: {score}/{scale} ({round(ratio*100)}%).")
-            elif ratio < 0.70:
-                gaps.append(f"Moderate academic standing: {score}/{scale}.")
+            scale = profile.academic_score.scale
+
+            if scale is not None and scale > 0:
+                if score <= scale:
+                    ratio = max(0.0, score / scale)
+                    score_pts = ratio * 40.0
+                    points += score_pts
+                    if ratio >= 0.85:
+                        strengths.append(f"Strong academic record: {score}/{scale} ({round(ratio*100)}%).")
+                    elif ratio < 0.70:
+                        gaps.append(f"Moderate academic standing: {score}/{scale}.")
+                else:
+                    # Inconsistent explicit scale (score exceeds scale): do not fabricate ratio
+                    points += 20.0
+                    gaps.append(f"Academic score {score} exceeds stated scale {scale}; transcript verification required.")
+            else:
+                # Scale explicitly unstated: do not fabricate 4.0 or an unverified percentage
+                # Assign neutral baseline points for having documented scholastic performance
+                points += 28.0  # 70% of 40 points
+                strengths.append(f"Documented academic score: {score} (grading scale unstated).")
         else:
             gaps.append("Academic GPA/score is not specified in student profile.")
 

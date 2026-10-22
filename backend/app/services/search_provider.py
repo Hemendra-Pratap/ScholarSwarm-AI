@@ -27,17 +27,24 @@ class SearchProvider(ABC):
         pass
 
 
+_DEFAULT_KEY = object()
+
+
 class TavilySearchProvider(SearchProvider):
     """Concrete adapter for Tavily Search API using httpx."""
 
     def __init__(
         self,
-        api_key: str | None = None,
+        api_key: str | None = _DEFAULT_KEY,  # type: ignore[assignment]
         api_url: str | None = None,
         timeout: float | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ):
-        self.api_key = api_key if api_key is not None else settings.TAVILY_API_KEY
+        if api_key is _DEFAULT_KEY:
+            self.api_key = settings.TAVILY_API_KEY
+        else:
+            self.api_key = api_key
+
         # Check for placeholder default
         if self.api_key in ("your_tavily_api_key_here", ""):
             self.api_key = None

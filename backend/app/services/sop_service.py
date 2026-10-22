@@ -7,8 +7,8 @@ circumstances, goals, scholarship requirements, or deadlines.
 Explicitly places placeholders where facts are missing or unverified.
 """
 
-from app.schemas.opportunity import VerificationStatus
-from app.schemas.ranking import RankedOpportunityItem
+from app.schemas.opportunity import FundingType, VerificationStatus
+from app.schemas.ranking import DeadlineFeasibilityStatus, RankedOpportunityItem
 from app.schemas.sop import FactProvenanceItem, SOPDraftRequest, SOPDraftResponse
 from app.schemas.student_profile import StudentProfileBase
 
@@ -158,7 +158,14 @@ def generate_sop_draft(request: SOPDraftRequest) -> SOPDraftResponse:
         )
     )
 
-    if item.funding_summary:
+    # Funding provenance
+    has_verified_funding = (
+        opp.funding is not None
+        and opp.funding.funding_type != FundingType.UNKNOWN
+        and "unverified" not in (item.funding_summary or "").lower()
+        and "unknown" not in (item.funding_summary or "").lower()
+    )
+    if has_verified_funding and item.funding_summary:
         confirmed_facts.append(
             FactProvenanceItem(
                 field_name="Funding Structure",
@@ -167,8 +174,16 @@ def generate_sop_draft(request: SOPDraftRequest) -> SOPDraftResponse:
                 is_verified=True,
             )
         )
+    elif item.funding_summary:
+        unverified_claims.append(f"Funding terms unverified: {item.funding_summary}")
 
-    if item.deadline_summary:
+    # Deadline provenance
+    has_concrete_deadline = (
+        opp.deadline is not None
+        and item.deadline_feasibility != DeadlineFeasibilityStatus.UNKNOWN
+        and "unverified" not in (item.deadline_summary or "").lower()
+    )
+    if has_concrete_deadline and item.deadline_summary:
         confirmed_facts.append(
             FactProvenanceItem(
                 field_name="Application Deadline",
@@ -177,6 +192,8 @@ def generate_sop_draft(request: SOPDraftRequest) -> SOPDraftResponse:
                 is_verified=True,
             )
         )
+    elif item.deadline_summary:
+        unverified_claims.append(f"Deadline unverified: {item.deadline_summary}")
 
     # Gaps & unverified items
     for gap in item.main_gaps:
@@ -274,12 +291,26 @@ def generate_sop_draft(request: SOPDraftRequest) -> SOPDraftResponse:
         lines.append(
             f"My profile demonstrates direct alignment with this program's criteria: {strengths_bullet}."
         )
-    if item.funding_summary:
-        lines.append(f"Regarding funding and program parameters: {item.funding_summary}.")
+
+    # Grounded funding handling
+    if has_verified_funding and item.funding_summary:
+        lines.append(f"Regarding verified funding structure: {item.funding_summary}")
+    else:
+        lines.append(
+            "Regarding funding parameters: Specific award coverage remains subject to confirmation "
+            "against official university bursary and financial aid guidelines."
+        )
+
     if profile.budget_constraint and profile.budget_constraint.notes:
         lines.append(f"My financial planning considerations: {profile.budget_constraint.notes}.")
-    if item.deadline_summary:
+
+    # Grounded deadline handling: never claim commitment to an unverified deadline or output raw internal fallback
+    if has_concrete_deadline and item.deadline_summary:
         lines.append(f"I am fully prepared to meet the documented submission timeline: {item.deadline_summary}.")
+    else:
+        lines.append(
+            "I am monitoring official announcements to submit my application as soon as the upcoming window opens."
+        )
     lines.append("")
 
     # Section 5: Defensively Addressing Prerequisites & Recommended Actions

@@ -392,18 +392,25 @@ def test_api_route_discover_endpoint_validation():
 
 def test_api_route_discover_endpoint_unconfigured_default():
     """Verify /api/v1/research/discover returns provider_unavailable when Tavily key is unconfigured."""
-    resp = client.post(
-        "/api/v1/research/discover",
-        json={
-            "query": "international scholarships in computer science",
-            "destinations": ["Germany"],
-            "study_level": "master",
-            "max_candidates": 5,
-        },
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "provider_unavailable"
-    assert data["total_candidates"] == 0
-    assert len(data["candidates"]) == 0
-    assert "Search provider is not configured" in data["error_message"]
+    from app.api.routes.research import get_search_provider
+    from app.services.search_provider import TavilySearchProvider
+
+    app.dependency_overrides[get_search_provider] = lambda: TavilySearchProvider(api_key=None)
+    try:
+        resp = client.post(
+            "/api/v1/research/discover",
+            json={
+                "query": "international scholarships in computer science",
+                "destinations": ["Germany"],
+                "study_level": "master",
+                "max_candidates": 5,
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "provider_unavailable"
+        assert data["total_candidates"] == 0
+        assert len(data["candidates"]) == 0
+        assert "Search provider is not configured" in data["error_message"]
+    finally:
+        app.dependency_overrides.pop(get_search_provider, None)

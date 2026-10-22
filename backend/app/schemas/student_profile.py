@@ -47,7 +47,7 @@ class StudentProfileBase(BaseModel):
     budget_constraint: BudgetConstraint | None = Field(default=None, description="Budget or funding constraints if supplied")
     public_profile_urls: list[HttpUrl] = Field(default_factory=list, description="Explicitly supplied public URLs")
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class StudentProfileCreate(StudentProfileBase):

@@ -280,3 +280,52 @@ def test_sop_draft_provenance_verified_vs_unverified_opportunity():
     inst_fact_inacc = next(f for f in resp_inaccessible.confirmed_facts_used if f.field_name == "Target Institution")
     assert opp_fact_inacc.is_verified is False
     assert inst_fact_inacc.is_verified is False
+
+
+# --- Regression Tests for SOP Deadline & Funding Grounding ---
+
+def test_sop_draft_unknown_deadline_omits_commitment_and_raw_fallback():
+    profile = make_test_profile(score=9.01, scale=None)
+    item = make_test_ranked_item()
+    # Simulate unverified/missing deadline
+    item.opportunity.deadline = None
+    item.deadline_summary = "Application deadline unverified on official source."
+    item.deadline_feasibility = DeadlineFeasibilityStatus.UNKNOWN
+    item.main_strengths = ["Documented academic score: 9.01 (grading scale unstated)."]
+
+    resp = generate_sop_draft(SOPDraftRequest(student_profile=profile, opportunity=item))
+    draft = resp.draft_text
+
+    # Must NOT claim commitment to the fallback string or output internal fallback as a timeline
+    assert "timeline: Application deadline unverified" not in draft
+    assert "I am fully prepared to meet the documented submission timeline: Application deadline" not in draft
+    # Must use neutral phrasing instead
+    assert "monitoring official announcements to submit my application as soon as the upcoming window opens" in draft
+    # Must NOT include unverified deadline as a confirmed fact
+    assert not any(f.field_name == "Application Deadline" for f in resp.confirmed_facts_used)
+    # Must track unverified deadline in unverified_claims
+    assert any("Deadline unverified" in c for c in resp.unverified_claims)
+    # Grounding check for academic score in SOP
+    assert "9.01/4.0" not in draft
+    assert "(100%)" not in draft
+    assert "9.01 (grading scale unstated)" in draft
+
+
+def test_sop_draft_unverified_funding_does_not_assert_confirmed_benefits():
+    profile = make_test_profile()
+    item = make_test_ranked_item()
+    # Simulate unverified funding
+    item.opportunity.funding = FundingDetail(funding_type=FundingType.UNKNOWN)
+    item.funding_summary = "Funding details unverified / unknown on official source."
+
+    resp = generate_sop_draft(SOPDraftRequest(student_profile=profile, opportunity=item))
+    draft = resp.draft_text
+
+    # Must NOT present internal unverified string as a confirmed funding structure
+    assert "Regarding verified funding structure: Funding details unverified" not in draft
+    # Must use neutral placeholder statement
+    assert "Specific award coverage remains subject to confirmation" in draft
+    # Must NOT track unverified funding in confirmed_facts_used
+    assert not any(f.field_name == "Funding Structure" for f in resp.confirmed_facts_used)
+    # Must record in unverified_claims
+    assert any("Funding terms unverified" in c for c in resp.unverified_claims)
