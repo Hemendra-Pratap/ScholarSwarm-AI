@@ -137,9 +137,12 @@ def adapt_candidate_and_audit_to_ranking_input(
                     opp.official_url = TypeAdapter(HttpUrl).validate_python(verification_report.verified_official_url)
                 except Exception:
                     pass
-        elif verification_report.overall_status == VerificationReportStatus.PARTIALLY_VERIFIED:
-            opp.verification_status = VerificationStatus.PARTIALLY_VERIFIED
+        elif verification_report.overall_status == VerificationReportStatus.CONFLICTING:
+            opp.verification_status = VerificationStatus.CONTRADICTORY
+        elif verification_report.overall_status == VerificationReportStatus.SOURCE_INACCESSIBLE:
+            opp.verification_status = VerificationStatus.INACCESSIBLE
         else:
+            # PARTIALLY_VERIFIED or UNVERIFIED map to UNVERIFIED on OpportunityBase
             opp.verification_status = VerificationStatus.UNVERIFIED
     else:
         opp.verification_status = VerificationStatus.UNVERIFIED
