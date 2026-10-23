@@ -5,7 +5,12 @@ from app.schemas.health import HealthResponse
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/health", response_model=HealthResponse, summary="Service Health Check")
+@router.api_route(
+    "/health",
+    methods=["GET", "HEAD"],
+    response_model=HealthResponse,
+    summary="Service Health Check",
+)
 async def health_check() -> HealthResponse:
     """Return health status and application identity without internal diagnostics."""
     return HealthResponse(
