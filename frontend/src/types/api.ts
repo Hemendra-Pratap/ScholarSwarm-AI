@@ -4,7 +4,7 @@ export interface HealthResponse {
   version: string
 }
 
-export type HealthStatusState = 'loading' | 'online' | 'offline'
+export type HealthStatusState = 'loading' | 'waking' | 'online' | 'offline'
 
 // --- Document Ingestion & Student Profile Types ---
 

@@ -2,11 +2,133 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-navy: 11 19 41;
+  --brand-navy-dark: 7 12 27;
+  --brand-navy-light: 30 41 59;
+  --brand-indigo: 79 70 229;
+  --brand-indigo-hover: 67 56 202;
+  --brand-indigo-subtle: 238 242 255;
+  --brand-teal: 13 148 136;
+  --brand-teal-hover: 15 118 110;
+  --brand-teal-subtle: 240 253 250;
+  --brand-emerald: 5 150 105;
+  --brand-emerald-subtle: 236 253 245;
+  --brand-amber: 217 119 6;
+  --brand-amber-subtle: 255 251 235;
+  --surface-warm: 251 251 250;
+  --surface-card: 255 255 255;
+  --surface-muted: 248 250 252;
+  --surface-border: 226 232 240;
+}
+
+.dark {
+  color-scheme: dark;
+  --brand-navy: 226 232 240;
+  --brand-navy-dark: 248 250 252;
+  --brand-navy-light: 203 213 225;
+  --brand-indigo: 165 180 252;
+  --brand-indigo-hover: 199 210 254;
+  --brand-indigo-subtle: 30 41 59;
+  --brand-teal: 45 212 191;
+  --brand-teal-hover: 94 234 212;
+  --brand-teal-subtle: 19 78 74;
+  --brand-emerald: 52 211 153;
+  --brand-emerald-subtle: 6 78 59;
+  --brand-amber: 251 191 36;
+  --brand-amber-subtle: 69 45 12;
+  --surface-warm: 11 17 32;
+  --surface-card: 17 24 39;
+  --surface-muted: 31 41 55;
+  --surface-border: 51 65 85;
+}
+
 @layer base {
   body {
     @apply bg-surface-warm text-brand-navy antialiased min-h-screen selection:bg-brand-indigo-subtle selection:text-brand-indigo;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+.dark .text-slate-400 {
+  color: #94a3b8;
+}
+
+.dark .text-slate-500 {
+  color: #aab8ca;
+}
+
+.dark .text-slate-600 {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-700 {
+  color: #dbe4ef;
+}
+
+.dark .bg-white {
+  background-color: rgb(var(--surface-card));
+}
+
+.dark .bg-slate-100 {
+  background-color: rgb(var(--surface-muted));
+}
+
+.dark .bg-slate-200 {
+  background-color: #334155;
+}
+
+.dark .border-slate-200 {
+  border-color: rgb(var(--surface-border));
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  color-scheme: dark;
+  background-color: rgb(var(--surface-muted));
+  color: #e2e8f0;
+  border-color: rgb(var(--surface-border));
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dark .bg-rose-50,
+.dark .bg-red-50 {
+  background-color: #3b1f2a;
+}
+
+.dark .border-rose-200,
+.dark .border-red-200 {
+  border-color: #7f3348;
+}
+
+.dark .text-rose-900,
+.dark .text-red-900 {
+  color: #fecdd3;
+}
+
+.dark .text-rose-800,
+.dark .text-red-800 {
+  color: #fda4af;
+}
+
+.dark .text-rose-700,
+.dark .text-red-700 {
+  color: #fda4af;
+}
+
+.dark .text-emerald-800,
+.dark .text-emerald-700,
+.dark .text-emerald-600 {
+  color: #6ee7b7;
+}
+
+.dark .border-emerald-200 {
+  border-color: #166534;
 }
 
 @media (prefers-reduced-motion: reduce) {
