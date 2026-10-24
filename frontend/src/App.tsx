@@ -15,7 +15,7 @@ import type {
   ResearchRunExecutionRequest,
   ResearchRunExecutionResponse,
 } from './types/api'
-import { ShieldAlert, Cpu, Sparkles, FileText, Search, BarChart3, AlertCircle } from 'lucide-react'
+import { ShieldAlert, Cpu, Sparkles, FileText, Search, BarChart3, AlertCircle, X } from 'lucide-react'
 
 export function App() {
   const [status, setStatus] = useState<HealthStatusState>('loading')
@@ -23,6 +23,10 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const [latencyMs, setLatencyMs] = useState<number | null>(null)
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+  const [healthCheckGeneration, setHealthCheckGeneration] = useState(0)
+  const [dismissedToastKey, setDismissedToastKey] = useState<string | null>(null)
+  const toastKey = `${healthCheckGeneration}:${status}`
+  const showBackendToast = status !== 'online' && dismissedToastKey !== toastKey
 
   // Navigation tab for smooth desktop/mobile workflow
   const [activeWorkflowTab, setActiveWorkflowTab] = useState<'profile' | 'research' | 'results' | 'sop'>('profile')
@@ -36,32 +40,81 @@ export function App() {
   const [runResults, setRunResults] = useState<ResearchRunExecutionResponse | null>(null)
   const [selectedOpportunityForSOP, setSelectedOpportunityForSOP] = useState<string | null>(null)
 
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true)
-    const result = await fetchBackendHealth()
-    setData(result.data)
-    setError(result.error)
-    setLatencyMs(result.latencyMs)
-    setStatus(result.data ? 'online' : 'offline')
-    setIsRefreshing(false)
+  const handleManualRefresh = () => {
+    setStatus('loading')
+    setData(null)
+    setError(null)
+    setLatencyMs(null)
+    setHealthCheckGeneration((generation) => generation + 1)
   }
 
   useEffect(() => {
     let active = true
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    let requestController: AbortController | undefined
+    const startedAt = performance.now()
+    const retryIntervalMs = 5000
+    const retryWindowMs = 90_000
 
-    fetchBackendHealth().then((result) => {
-      if (active) {
-        setData(result.data)
-        setError(result.error)
-        setLatencyMs(result.latencyMs)
-        setStatus(result.data ? 'online' : 'offline')
+    const checkHealth = async () => {
+      if (!active) return
+
+      if (performance.now() - startedAt >= retryWindowMs) {
+        setIsRefreshing(false)
+        setStatus('offline')
+        return
       }
-    })
+
+      requestController = new AbortController()
+      const requestStartedAt = performance.now()
+      setIsRefreshing(true)
+      const result = await fetchBackendHealth(4000, requestController.signal)
+      if (!active) return
+
+      setIsRefreshing(false)
+      if (result.data) {
+        setData(result.data)
+        setLatencyMs(result.latencyMs)
+        setError(null)
+        setStatus('online')
+        return
+      }
+
+      setData(null)
+      setError(result.error)
+      setLatencyMs(result.latencyMs)
+      if (performance.now() - startedAt >= retryWindowMs) {
+        setStatus('offline')
+        return
+      }
+
+      setStatus('waking')
+      const requestDuration = performance.now() - requestStartedAt
+      const remainingWindow = retryWindowMs - (performance.now() - startedAt)
+      retryTimer = setTimeout(
+        checkHealth,
+        Math.max(0, Math.min(retryIntervalMs - requestDuration, remainingWindow)),
+      )
+    }
+
+    void checkHealth()
 
     return () => {
       active = false
+      requestController?.abort()
+      if (retryTimer !== undefined) clearTimeout(retryTimer)
     }
-  }, [])
+  }, [healthCheckGeneration])
+
+  useEffect(() => {
+    if (!showBackendToast) return
+
+    const toastTimer = setTimeout(() => {
+      setDismissedToastKey(toastKey)
+    }, 10_000)
+
+    return () => clearTimeout(toastTimer)
+  }, [showBackendToast, toastKey])
 
   const handleProfileConfirmed = (profile: StudentProfileRead) => {
     setConfirmedProfile(profile)
@@ -88,7 +141,30 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-warm text-brand-navy">
-      <Header status={status} latencyMs={latencyMs} />
+      <Header status={status} latencyMs={latencyMs} onRetry={handleManualRefresh} />
+
+      {showBackendToast && (
+        <div
+          className="fixed top-20 right-4 sm:right-6 z-20 w-[calc(100%-2rem)] max-w-sm rounded-xl border border-surface-border bg-surface-card p-4 shadow-lg"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-brand-indigo" aria-hidden="true" />
+            <p className="flex-1 text-xs leading-relaxed text-slate-600">
+              Backend taking a nap? 💤 We're on Render's free tier — billionaire server budget not included. Give it around 45 seconds to wake up.
+            </p>
+            <button
+              type="button"
+              onClick={() => setDismissedToastKey(toastKey)}
+              className="rounded p-1 text-slate-400 hover:bg-surface-muted hover:text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-indigo/30"
+              aria-label="Dismiss backend status notification"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
         {/* Core Value Proposition & 4-Step Pipeline */}

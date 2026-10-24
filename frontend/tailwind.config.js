@@ -9,34 +9,34 @@ export default {
       colors: {
         brand: {
           navy: {
-            DEFAULT: '#0b1329',
-            dark: '#070c1b',
-            light: '#1e293b',
+            DEFAULT: 'rgb(var(--brand-navy) / <alpha-value>)',
+            dark: 'rgb(var(--brand-navy-dark) / <alpha-value>)',
+            light: 'rgb(var(--brand-navy-light) / <alpha-value>)',
           },
           indigo: {
-            DEFAULT: '#4f46e5',
-            hover: '#4338ca',
-            subtle: '#eef2ff',
+            DEFAULT: 'rgb(var(--brand-indigo) / <alpha-value>)',
+            hover: 'rgb(var(--brand-indigo-hover) / <alpha-value>)',
+            subtle: 'rgb(var(--brand-indigo-subtle) / <alpha-value>)',
           },
           teal: {
-            DEFAULT: '#0d9488',
-            hover: '#0f766e',
-            subtle: '#f0fdfa',
+            DEFAULT: 'rgb(var(--brand-teal) / <alpha-value>)',
+            hover: 'rgb(var(--brand-teal-hover) / <alpha-value>)',
+            subtle: 'rgb(var(--brand-teal-subtle) / <alpha-value>)',
           },
           emerald: {
-            DEFAULT: '#059669',
-            subtle: '#ecfdf5',
+            DEFAULT: 'rgb(var(--brand-emerald) / <alpha-value>)',
+            subtle: 'rgb(var(--brand-emerald-subtle) / <alpha-value>)',
           },
           amber: {
-            DEFAULT: '#d97706',
-            subtle: '#fffbeb',
+            DEFAULT: 'rgb(var(--brand-amber) / <alpha-value>)',
+            subtle: 'rgb(var(--brand-amber-subtle) / <alpha-value>)',
           },
         },
         surface: {
-          warm: '#fbfbfa',
-          card: '#ffffff',
-          muted: '#f8fafc',
-          border: '#e2e8f0',
+          warm: 'rgb(var(--surface-warm) / <alpha-value>)',
+          card: 'rgb(var(--surface-card) / <alpha-value>)',
+          muted: 'rgb(var(--surface-muted) / <alpha-value>)',
+          border: 'rgb(var(--surface-border) / <alpha-value>)',
         },
       },
       fontFamily: {

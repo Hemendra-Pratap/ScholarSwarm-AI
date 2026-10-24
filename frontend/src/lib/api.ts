@@ -21,10 +21,18 @@ export interface HealthCheckResult {
   latencyMs: number | null
 }
 
-export async function fetchBackendHealth(timeoutMs = 4000): Promise<HealthCheckResult> {
+export async function fetchBackendHealth(
+  timeoutMs = 4000,
+  signal?: AbortSignal,
+): Promise<HealthCheckResult> {
   const startTime = performance.now()
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const abortRequest = () => controller.abort()
+  signal?.addEventListener('abort', abortRequest, { once: true })
+  if (signal?.aborted) {
+    controller.abort()
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
@@ -67,6 +75,7 @@ export async function fetchBackendHealth(timeoutMs = 4000): Promise<HealthCheckR
     }
   } finally {
     clearTimeout(timeoutId)
+    signal?.removeEventListener('abort', abortRequest)
   }
 }
 

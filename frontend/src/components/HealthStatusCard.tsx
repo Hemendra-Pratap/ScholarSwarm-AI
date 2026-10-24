@@ -28,7 +28,7 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
             className={`p-2.5 rounded-lg ${
               status === 'online'
                 ? 'bg-brand-emerald-subtle text-brand-emerald'
-                : status === 'loading'
+                : status === 'loading' || status === 'waking'
                 ? 'bg-slate-100 text-slate-500'
                 : 'bg-rose-50 text-rose-600'
             }`}
@@ -91,11 +91,15 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
               </span>
             </div>
           </div>
-        ) : status === 'loading' ? (
+        ) : status === 'loading' || status === 'waking' ? (
           <div className="p-6 rounded-lg bg-surface-muted border border-surface-border text-center">
             <div className="inline-flex items-center space-x-2 text-slate-600 text-sm">
               <RefreshCw className="h-4 w-4 animate-spin text-brand-indigo" />
-              <span>Querying backend health endpoint...</span>
+              <span>
+                {status === 'waking'
+                  ? 'Waking up backend… Retrying automatically.'
+                  : 'Querying backend health endpoint...'}
+              </span>
             </div>
           </div>
         ) : (
@@ -108,6 +112,9 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
                 </p>
                 <p className="text-xs text-rose-700 mt-0.5">
                   {error || 'Unable to reach the FastAPI service.'}
+                </p>
+                <p className="mt-2 text-xs text-rose-700">
+                  Backend taking a nap? We're on Render's free tier — billionaire server budget not included. Give it around 45 seconds to wake up.
                 </p>
                 <div className="mt-3 text-xs bg-white/70 p-2.5 rounded border border-rose-200 font-mono text-slate-800">
                   <p className="font-sans font-medium text-slate-600 mb-1">To start the local backend service:</p>
